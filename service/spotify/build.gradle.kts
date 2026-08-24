@@ -64,6 +64,9 @@ kotlin {
                 implementation(libs.common)
 
                 implementation(libs.logging)
+
+                // PKCE verifier/challenge for the OAuth playlist sync flow
+                implementation(libs.okio)
             }
         }
 

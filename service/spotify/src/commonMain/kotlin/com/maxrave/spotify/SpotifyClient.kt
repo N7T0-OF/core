@@ -23,9 +23,11 @@ import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
+import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.Parameters
 import io.ktor.http.contentType
 import io.ktor.http.userAgent
 import io.ktor.serialization.kotlinx.KotlinxSerializationConverter
@@ -239,6 +241,64 @@ class SpotifyClient {
         )
     }
 
+    suspend fun exchangeOAuthAccessToken(
+        code: String,
+        codeVerifier: String,
+    ) = spotifyClient.submitForm(
+        url = "https://accounts.spotify.com/api/token",
+        formParameters =
+            Parameters.build {
+                append("grant_type", "authorization_code")
+                append("code", code)
+                append("redirect_uri", REDIRECT_URI)
+                append("client_id", SPOTIFY_CLIENT_ID)
+                append("code_verifier", codeVerifier)
+            },
+    ) {
+        userAgent(USER_AGENT)
+        header("Accept", "application/json")
+    }
+
+    suspend fun refreshOAuthAccessToken(
+        refreshToken: String,
+    ) = spotifyClient.submitForm(
+        url = "https://accounts.spotify.com/api/token",
+        formParameters =
+            Parameters.build {
+                append("grant_type", "refresh_token")
+                append("refresh_token", refreshToken)
+                append("client_id", SPOTIFY_CLIENT_ID)
+            },
+    ) {
+        userAgent(USER_AGENT)
+        header("Accept", "application/json")
+    }
+
+    suspend fun getSpotifyUserPlaylists(
+        token: String,
+        limit: Int = 50,
+        offset: Int = 0,
+    ) = spotifyClient.get("https://api.spotify.com/v1/me/playlists") {
+        userAgent(USER_AGENT)
+        contentType(ContentType.Application.Json)
+        header("Authorization", "Bearer $token")
+        parameter("limit", limit)
+        parameter("offset", offset)
+    }
+
+    suspend fun getSpotifyPlaylistTracks(
+        token: String,
+        playlistId: String,
+        limit: Int = 100,
+        offset: Int = 0,
+    ) = spotifyClient.get("https://api.spotify.com/v1/playlists/$playlistId/tracks") {
+        userAgent(USER_AGENT)
+        contentType(ContentType.Application.Json)
+        header("Authorization", "Bearer $token")
+        parameter("limit", limit)
+        parameter("offset", offset)
+    }
+
     suspend fun getSpotifyClientToken() =
         jsonClient.post("https://clienttoken.spotify.com/v1/clienttoken") {
             headers {
@@ -268,5 +328,7 @@ class SpotifyClient {
 
     companion object {
         const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.157 Safari/537.36"
+        const val SPOTIFY_CLIENT_ID = "d8a5ed958d274c2e8ee717e6a4b0971d"
+        const val REDIRECT_URI = "simpmusic://spotify-auth"
     }
 }

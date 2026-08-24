@@ -559,6 +559,58 @@ internal class DataStoreManagerImpl(
         }
     }
 
+    override val spotifyOAuthAccessToken: Flow<String> =
+        settingsDataStore.data.map { preferences ->
+            preferences[SPOTIFY_OAUTH_ACCESS_TOKEN] ?: ""
+        }
+
+    override suspend fun setSpotifyOAuthAccessToken(token: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { settings ->
+                settings[SPOTIFY_OAUTH_ACCESS_TOKEN] = token
+            }
+        }
+    }
+
+    override val spotifyOAuthRefreshToken: Flow<String> =
+        settingsDataStore.data.map { preferences ->
+            preferences[SPOTIFY_OAUTH_REFRESH_TOKEN] ?: ""
+        }
+
+    override suspend fun setSpotifyOAuthRefreshToken(token: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { settings ->
+                settings[SPOTIFY_OAUTH_REFRESH_TOKEN] = token
+            }
+        }
+    }
+
+    override val spotifyOAuthExpiresAt: Flow<Long> =
+        settingsDataStore.data.map { preferences ->
+            preferences[SPOTIFY_OAUTH_EXPIRES_AT] ?: 0L
+        }
+
+    override suspend fun setSpotifyOAuthExpiresAt(expiresAt: Long) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { settings ->
+                settings[SPOTIFY_OAUTH_EXPIRES_AT] = expiresAt
+            }
+        }
+    }
+
+    override val spotifyOAuthLoggedIn: Flow<String> =
+        settingsDataStore.data.map { preferences ->
+            preferences[SPOTIFY_OAUTH_LOGGED_IN] ?: FALSE
+        }
+
+    override suspend fun setSpotifyOAuthLoggedIn(loggedIn: Boolean) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { settings ->
+                settings[SPOTIFY_OAUTH_LOGGED_IN] = if (loggedIn) TRUE else FALSE
+            }
+        }
+    }
+
     override val equalizerEnabled: Flow<String> =
         settingsDataStore.data.map { preferences ->
             preferences[EQUALIZER_ENABLED] ?: FALSE
@@ -1634,6 +1686,10 @@ internal class DataStoreManagerImpl(
         val VIDEO_QUALITY = stringPreferencesKey("video_quality")
         val PLAYER_VOLUME = floatPreferencesKey("player_volume")
         val SPDC = stringPreferencesKey("sp_dc")
+        val SPOTIFY_OAUTH_ACCESS_TOKEN = stringPreferencesKey("spotify_oauth_access_token")
+        val SPOTIFY_OAUTH_REFRESH_TOKEN = stringPreferencesKey("spotify_oauth_refresh_token")
+        val SPOTIFY_OAUTH_EXPIRES_AT = longPreferencesKey("spotify_oauth_expires_at")
+        val SPOTIFY_OAUTH_LOGGED_IN = stringPreferencesKey("spotify_oauth_logged_in")
         val SPOTIFY_LYRICS = stringPreferencesKey("spotify_lyrics")
         val SYNC_FOLLOW_TO_YOUTUBE = stringPreferencesKey("sync_follow_to_youtube")
         val EQUALIZER_AUTOEQ_PROFILE = stringPreferencesKey("equalizer_autoeq_profile")

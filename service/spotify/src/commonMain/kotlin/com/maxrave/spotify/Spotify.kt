@@ -5,6 +5,9 @@ import com.maxrave.spotify.model.response.spotify.CanvasResponse
 import com.maxrave.spotify.model.response.spotify.ClientTokenResponse
 import com.maxrave.spotify.model.response.spotify.PersonalTokenResponse
 import com.maxrave.spotify.model.response.spotify.SpotifyLyricsResponse
+import com.maxrave.spotify.model.response.spotify.SpotifyOAuthTokenResponse
+import com.maxrave.spotify.model.response.spotify.playlist.SpotifyPlaylistsResponse
+import com.maxrave.spotify.model.response.spotify.playlist.SpotifyPlaylistTracksResponse
 import com.maxrave.spotify.model.response.spotify.search.SpotifySearchResponse
 import io.ktor.client.call.body
 import io.ktor.client.engine.ProxyBuilder
@@ -94,5 +97,36 @@ class Spotify {
         clientToken: String,
     ) = runCatching {
         spotifyClient.getSpotifyCanvas(trackId, token, clientToken).body<CanvasResponse>()
+    }
+
+    /**
+     * OAuth authorization-code + PKCE flow — exchanges the callback code for access/refresh tokens.
+     */
+    suspend fun exchangeOAuthCode(
+        code: String,
+        codeVerifier: String,
+    ) = runCatching {
+        spotifyClient.exchangeOAuthAccessToken(code, codeVerifier).body<SpotifyOAuthTokenResponse>()
+    }
+
+    suspend fun refreshOAuthToken(refreshToken: String) = runCatching {
+        spotifyClient.refreshOAuthAccessToken(refreshToken).body<SpotifyOAuthTokenResponse>()
+    }
+
+    suspend fun getUserPlaylists(
+        token: String,
+        limit: Int = 50,
+        offset: Int = 0,
+    ) = runCatching {
+        spotifyClient.getSpotifyUserPlaylists(token, limit, offset).body<SpotifyPlaylistsResponse>()
+    }
+
+    suspend fun getPlaylistTracks(
+        token: String,
+        playlistId: String,
+        limit: Int = 100,
+        offset: Int = 0,
+    ) = runCatching {
+        spotifyClient.getSpotifyPlaylistTracks(token, playlistId, limit, offset).body<SpotifyPlaylistTracksResponse>()
     }
 }

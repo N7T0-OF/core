@@ -16,6 +16,7 @@ import com.maxrave.data.repository.PlaylistRepositoryImpl
 import com.maxrave.data.repository.PodcastRepositoryImpl
 import com.maxrave.data.repository.SearchRepositoryImpl
 import com.maxrave.data.repository.SongRepositoryImpl
+import com.maxrave.data.repository.SpotifySyncRepositoryImpl
 import com.maxrave.data.repository.StreamRepositoryImpl
 import com.maxrave.data.repository.UpdateRepositoryImpl
 import com.maxrave.domain.repository.AccountRepository
@@ -32,6 +33,7 @@ import com.maxrave.domain.repository.PlaylistRepository
 import com.maxrave.domain.repository.PodcastRepository
 import com.maxrave.domain.repository.SearchRepository
 import com.maxrave.domain.repository.SongRepository
+import com.maxrave.domain.repository.SpotifySyncRepository
 import com.maxrave.domain.repository.StreamRepository
 import com.maxrave.domain.repository.UpdateRepository
 import org.koin.core.qualifier.named
@@ -96,6 +98,10 @@ val repositoryModule =
 
         single<StreamRepository>(createdAtStart = true) {
             StreamRepositoryImpl(get(), get())
+        }
+
+        single<SpotifySyncRepository>(createdAtStart = true) {
+            SpotifySyncRepositoryImpl(get(), get(), get(), get())
         }
 
         single<UpdateRepository>(createdAtStart = true) {

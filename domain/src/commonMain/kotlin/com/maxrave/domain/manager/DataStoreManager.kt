@@ -160,6 +160,25 @@ interface DataStoreManager {
 
     suspend fun setSpdc(spdc: String)
 
+    // OAuth tokens for the Spotify playlist sync (authorization-code + PKCE flow).
+    // Distinct from spdc: sp_dc is the web-player cookie used for lyrics/canvas, while
+    // these tokens call the Spotify Web API v1 (playlists).
+    val spotifyOAuthAccessToken: Flow<String>
+
+    suspend fun setSpotifyOAuthAccessToken(token: String)
+
+    val spotifyOAuthRefreshToken: Flow<String>
+
+    suspend fun setSpotifyOAuthRefreshToken(token: String)
+
+    val spotifyOAuthExpiresAt: Flow<Long>
+
+    suspend fun setSpotifyOAuthExpiresAt(expiresAt: Long)
+
+    val spotifyOAuthLoggedIn: Flow<String>
+
+    suspend fun setSpotifyOAuthLoggedIn(loggedIn: Boolean)
+
     /**
      * Whether following an artist in the app also subscribes to their YouTube channel.
      *
