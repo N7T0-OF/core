@@ -873,6 +873,12 @@ class YouTube {
             ytMusic.checkForGithubReleaseUpdate().body<GithubResponse>()
         }
 
+    // SPACEKAI FEATURE: latest SimpMusic (upstream) release, INFO-ONLY.
+    suspend fun checkForUpstreamRelease(): Result<GithubResponse> =
+        runCatching {
+            ytMusic.checkForUpstreamRelease().body<GithubResponse>()
+        }
+
     suspend fun checkForFdroidUpdate(): Result<FdroidResponse> =
         runCatching {
             ytMusic.checkForFdroidUpdate().body<FdroidResponse>()

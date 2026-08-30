@@ -598,6 +598,16 @@ class Ytmusic {
         }
 
     suspend fun checkForGithubReleaseUpdate() =
+        httpClient.get("https://api.github.com/repos/N7T0-OF/Sankamusic/releases/latest") {
+            contentType(ContentType.Application.Json)
+        }
+
+    // SPACEKAI FEATURE: latest SimpMusic (upstream) release, INFO-ONLY. Reads the REAL
+    // latest release of maxrave-dev/SimpMusic dynamically. Used by the Compatibility
+    // Matrix: the installed SpaceKai layer reports the newest SimpMusic base and whether
+    // a SpaceKai build is compatible with it. The upstream APK is never downloaded or
+    // installed over SpaceKai (different signing key / would replace SpaceKai).
+    suspend fun checkForUpstreamRelease() =
         httpClient.get("https://api.github.com/repos/maxrave-dev/SimpMusic/releases/latest") {
             contentType(ContentType.Application.Json)
         }
