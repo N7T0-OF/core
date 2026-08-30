@@ -8,4 +8,8 @@ data class UpdateData(
     // update dialog can download + install it in-app instead of opening the
     // releases page in a browser.
     val apkUrl: String? = null,
+    // SPACEKAI FEATURE: direct URL of the SHA256SUMS.txt asset for this release,
+    // so the app can verify the downloaded APK's integrity before installing and
+    // refuse a corrupted/tampered file. Null when the release carries no checksums.
+    val checksumsUrl: String? = null,
 )

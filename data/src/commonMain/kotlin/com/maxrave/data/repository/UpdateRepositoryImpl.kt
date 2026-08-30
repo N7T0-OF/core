@@ -24,8 +24,13 @@ internal class UpdateRepositoryImpl(
                                 releaseTime = response.publishedAt ?: "",
                                 body = response.body ?: "",
                                 // SPACEKAI FEATURE: resolve the universal APK asset so the
-                                // dialog can install it in-app without opening the browser.
+                                // dialog can install it in-app without opening the browser,
+                                // and the SHA256SUMS.txt asset so integrity is verified first.
                                 apkUrl = resolveApkUrl(response.assets?.mapNotNull { it?.browserDownloadUrl }),
+                                checksumsUrl =
+                                    response.assets
+                                        ?.mapNotNull { it?.browserDownloadUrl }
+                                        ?.firstOrNull { url -> url.substringAfterLast('/').equals("SHA256SUMS.txt", ignoreCase = true) },
                             ),
                         ),
                     )
@@ -81,16 +86,22 @@ internal class UpdateRepositoryImpl(
                 }
         }.flowOn(Dispatchers.IO)
 
-    // SPACEKAI FEATURE: prefer a universal APK asset (name without an ABI suffix) so the
-    // downloaded build installs on the target device; fall back to any .apk.
+    // SPACEKAI FEATURE: prefer a universal, release, correctly-signed APK asset so the
+    // downloaded build installs on the target device; fall back to any .apk. Never pick
+    // debug/unsigned builds or ABI-split slices — the spacekai release only carries the
+    // universal one, but a stray -debug.apk would otherwise win the preference and
+    // "install" would fail or be unsigned.
     private fun resolveApkUrl(assets: List<String>?): String? {
         if (assets.isNullOrEmpty()) return null
-        val abiSuffixes =
+        val excludedTokens =
             listOf(
+                "-debug", "-unsigned", "-signed-", "-test", "\\.breakpoints",
                 "-arm64-v8a", "-armeabi-v7a", "-x86_64", "-universal", "-armv7a", "-arm64",
             )
         return assets
-            .firstOrNull { it.endsWith(".apk") && abiSuffixes.none { s -> s in it } }
+            .firstOrNull {
+                it.endsWith(".apk") && excludedTokens.none { token -> token in it }
+            }
             ?: assets.firstOrNull { it.endsWith(".apk") }
     }
 }
