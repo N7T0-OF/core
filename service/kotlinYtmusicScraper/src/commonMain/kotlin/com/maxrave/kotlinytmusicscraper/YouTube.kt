@@ -871,6 +871,11 @@ class YouTube {
             ytMusic.checkForGithubReleaseUpdate().body<GithubResponse>()
         }
 
+    suspend fun checkForUpstreamRelease(): Result<GithubResponse> =
+        runCatching {
+            ytMusic.checkForUpstreamRelease().body<GithubResponse>()
+        }
+
     suspend fun checkForFdroidUpdate(): Result<FdroidResponse> =
         runCatching {
             ytMusic.checkForFdroidUpdate().body<FdroidResponse>()

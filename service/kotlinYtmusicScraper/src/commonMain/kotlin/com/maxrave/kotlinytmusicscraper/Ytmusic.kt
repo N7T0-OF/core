@@ -602,6 +602,17 @@ class Ytmusic {
             contentType(ContentType.Application.Json)
         }
 
+    // SPACEKAI FEATURE: upstream (SimpMusic) release detection. Reads the REAL
+    // latest release of maxrave-dev/SimpMusic dynamically — no hardcoded version
+    // or APK URL. Used by the Compatibility Matrix: the app reports the newest
+    // SimpMusic release and whether the installed SpaceKai layer is built to run
+    // on top of it. This is INFO-ONLY: the upstream APK is never downloaded or
+    // installed over SpaceKai (different signing key / would replace SpaceKai).
+    suspend fun checkForUpstreamRelease() =
+        httpClient.get("https://api.github.com/repos/maxrave-dev/SimpMusic/releases/latest") {
+            contentType(ContentType.Application.Json)
+        }
+
     suspend fun checkForFdroidUpdate() =
         httpClient.get("https://f-droid.org/api/v1/packages/com.maxrave.simpmusic") {
             contentType(ContentType.Application.Json)
