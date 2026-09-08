@@ -2,9 +2,9 @@ package com.maxrave.data.repository
 
 import com.maxrave.domain.data.model.update.UpdateData
 import com.maxrave.domain.repository.UpdateRepository
-import com.maxrave.kotlinytmusicscraper.models.simpmusic.GithubResponse
 import com.maxrave.domain.utils.Resource
 import com.maxrave.kotlinytmusicscraper.YouTube
+import com.maxrave.kotlinytmusicscraper.models.simpmusic.GithubResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -124,11 +124,10 @@ internal class UpdateRepositoryImpl(
                 }
         }.flowOn(Dispatchers.IO)
 
-    // SPACEKAI FEATURE: prefer a universal, release, correctly-signed APK asset so the
-    // downloaded build installs on the target device; fall back to any .apk. Never pick
-    // debug/unsigned builds or ABI-split slices — the spacekai release only carries the
-    // universal one, but a stray -debug.apk would otherwise win the preference and
-    // "install" would fail or be unsigned.
+    // SPACEKAI FEATURE: resolve a universal, release APK asset so the downloaded build
+    // installs on the target device. Debug/unsigned builds and ABI-split slices are never
+    // selected, and there is NO "any .apk" fallback — a release without a suitable asset
+    // yields no APK and the updater refuses instead of installing a debug or wrong-ABI build.
     private fun resolveApkUrl(assets: List<String>?): String? {
         if (assets.isNullOrEmpty()) return null
         val excludedTokens =
@@ -136,10 +135,8 @@ internal class UpdateRepositoryImpl(
                 "-debug", "-unsigned", "-signed-", "-test", "\\.breakpoints",
                 "-arm64-v8a", "-armeabi-v7a", "-x86_64", "-armv7a", "-arm64",
             )
-        return assets
-            .firstOrNull {
-                it.endsWith(".apk") && excludedTokens.none { token -> token in it }
-            }
-            ?: assets.firstOrNull { it.endsWith(".apk") }
+        return assets.firstOrNull {
+            it.endsWith(".apk") && excludedTokens.none { token -> token in it }
+        }
     }
 }
