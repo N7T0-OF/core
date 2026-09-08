@@ -602,6 +602,17 @@ class Ytmusic {
             contentType(ContentType.Application.Json)
         }
 
+    /**
+     * Returns the published SpaceKai releases in GitHub's newest-first order.
+     * The list endpoint is required for the optional beta channel because
+     * `/releases/latest` intentionally excludes prereleases.
+     */
+    suspend fun checkForGithubReleaseUpdates() =
+        httpClient.get("https://api.github.com/repos/N7T0-OF/Sankamusic/releases") {
+            contentType(ContentType.Application.Json)
+            parameter("per_page", 30)
+        }
+
     // SPACEKAI FEATURE: latest SimpMusic (upstream) release, INFO-ONLY. Reads the REAL
     // latest release of maxrave-dev/SimpMusic dynamically. Used by the Compatibility
     // Matrix: the installed SpaceKai layer reports the newest SimpMusic base and whether

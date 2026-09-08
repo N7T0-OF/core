@@ -12,4 +12,6 @@ data class UpdateData(
     // so the app can verify the downloaded APK's integrity before installing and
     // refuse a corrupted/tampered file. Null when the release carries no checksums.
     val checksumsUrl: String? = null,
+    /** True when this candidate came from a GitHub prerelease. */
+    val isPrerelease: Boolean = false,
 )

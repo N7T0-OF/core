@@ -5,7 +5,11 @@ import com.maxrave.domain.utils.Resource
 import kotlinx.coroutines.flow.Flow
 
 interface UpdateRepository {
-    fun checkForGithubReleaseUpdate(): Flow<Resource<UpdateData>>
+    /**
+     * Checks the current app release channel. The default keeps the historical
+     * stable-only behavior; beta-aware callers request the published release list.
+     */
+    fun checkForGithubReleaseUpdate(includePrereleases: Boolean = false): Flow<Resource<UpdateData>>
     fun checkForFdroidUpdate(): Flow<Resource<UpdateData>>
     /**
      * SPACEKAI FEATURE: latest SimpMusic (upstream) release, INFO-ONLY.
