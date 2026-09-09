@@ -10,6 +10,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 
+internal data class GithubReleaseAsset(
+    val name: String,
+    val url: String,
+)
+
 internal class UpdateRepositoryImpl(
     private val youTube: YouTube,
 ) : UpdateRepository {
@@ -84,18 +89,31 @@ internal class UpdateRepositoryImpl(
         }.flowOn(Dispatchers.IO)
 
     private fun GithubResponse.toUpdateData(): UpdateData {
-        val assets = assets?.mapNotNull { it?.browserDownloadUrl }
+        val releaseAssets =
+            assets?.mapNotNull { asset ->
+                val source = asset ?: return@mapNotNull null
+                val url = source.browserDownloadUrl?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                GithubReleaseAsset(
+                    name =
+                        source.name
+                            ?.trim()
+                            ?.takeIf { it.isNotBlank() }
+                            ?: url.substringAfterLast('/').substringBefore('?'),
+                    url = url,
+                ).takeIf { it.name.isNotBlank() }
+            }
         return UpdateData(
             tagName = tagName ?: "",
             releaseTime = publishedAt ?: createdAt,
             body = body ?: "",
             // SPACEKAI FEATURE: resolve the universal APK asset so the dialog can
             // install it in-app and verify the release checksum first.
-            apkUrl = resolveApkUrl(assets),
+            apkUrl = resolveApkUrl(releaseAssets, tagName),
             checksumsUrl =
-                assets?.firstOrNull { url ->
-                    url.substringAfterLast('/').equals("SHA256SUMS.txt", ignoreCase = true)
-                },
+                releaseAssets
+                    ?.firstOrNull { asset ->
+                        asset.name.equals("SHA256SUMS.txt", ignoreCase = true)
+                    }?.url,
             isPrerelease = prerelease == true,
         )
     }
@@ -123,20 +141,63 @@ internal class UpdateRepositoryImpl(
                     emit(Resource.Error<UpdateData>(it.localizedMessage ?: "Unknown error"))
                 }
         }.flowOn(Dispatchers.IO)
-
-    // SPACEKAI FEATURE: resolve a universal, release APK asset so the downloaded build
-    // installs on the target device. Debug/unsigned builds and ABI-split slices are never
-    // selected, and there is NO "any .apk" fallback — a release without a suitable asset
-    // yields no APK and the updater refuses instead of installing a debug or wrong-ABI build.
-    private fun resolveApkUrl(assets: List<String>?): String? {
-        if (assets.isNullOrEmpty()) return null
-        val excludedTokens =
-            listOf(
-                "-debug", "-unsigned", "-signed-", "-test", "\\.breakpoints",
-                "-arm64-v8a", "-armeabi-v7a", "-x86_64", "-armv7a", "-arm64",
-            )
-        return assets.firstOrNull {
-            it.endsWith(".apk") && excludedTokens.none { token -> token in it }
-        }
-    }
 }
+
+// SPACEKAI FEATURE: resolve exactly one canonical universal/release APK. GitHub's
+// asset order is not a contract: never select the first plausible .apk, because a
+// debug, ABI-split or stale artifact could appear before the real release asset.
+// Only explicit names derived from the release tag are eligible, and multiple eligible
+// assets are treated as ambiguous. Returning null is deliberate fail-closed behavior;
+// the updater then refuses to download anything instead of guessing.
+internal fun resolveApkUrl(
+    assets: List<GithubReleaseAsset>?,
+    releaseTag: String?,
+): String? {
+    val expectedNames = expectedReleaseApkNames(releaseTag)
+    if (expectedNames.isEmpty()) return null
+
+    val candidates =
+        assets.orEmpty().filter { asset ->
+            val name = asset.name.trim().lowercase()
+            name in expectedNames &&
+                name.endsWith(".apk") &&
+                FORBIDDEN_APK_TOKENS.none { token -> token in name }
+        }
+    return candidates.singleOrNull()?.url
+}
+
+private fun expectedReleaseApkNames(releaseTag: String?): Set<String> {
+    val normalizedTag =
+        releaseTag
+            ?.trim()
+            ?.let { tag -> if (tag.startsWith("v", ignoreCase = true)) tag.drop(1) else tag }
+            ?.lowercase()
+            ?.takeIf { it.isNotBlank() }
+            ?: return emptySet()
+    val baseVersion =
+        normalizedTag
+            .substringBefore('-')
+            .substringBefore('_')
+            .substringBefore('+')
+    if (!SEMVER_TRIPLE.matches(baseVersion)) return emptySet()
+
+    // SpaceKai-v<version>.apk is the current public pipeline name. The explicit
+    // universal-release spellings are retained for temporary/legacy fixtures; they
+    // are still exact names, never a generic "any APK" fallback.
+    return setOf(
+        "spacekai-v$normalizedTag.apk",
+        "spacekai-v$baseVersion.apk",
+        "spacekai-v$normalizedTag-universal-release.apk",
+        "spacekai-v$baseVersion-universal-release.apk",
+        "sankamusic-v$normalizedTag-universal-release.apk",
+        "sankamusic-v$baseVersion-universal-release.apk",
+    )
+}
+
+private val SEMVER_TRIPLE = Regex("""\d+\.\d+\.\d+""")
+private val FORBIDDEN_APK_TOKENS =
+    listOf(
+        "-debug", "-unsigned", "-signed", "-test", ".breakpoints",
+        "-arm64-v8a", "-armeabi-v7a", "-x86_64", "-x86", "-armeabi",
+        "-armv7a", "-arm64", "-foss", "-aligned",
+    )
